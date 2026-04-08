@@ -20,6 +20,7 @@ import { DebugCommand } from "./cli/cmd/debug"
 import { StatsCommand } from "./cli/cmd/stats"
 import { McpCommand } from "./cli/cmd/mcp"
 import { GithubCommand } from "./cli/cmd/github"
+import { GiteaCommand } from "./cli/cmd/gitea"
 import { ExportCommand } from "./cli/cmd/export"
 import { ImportCommand } from "./cli/cmd/import"
 import { AttachCommand } from "./cli/cmd/tui/attach"
@@ -142,6 +143,7 @@ let cli = yargs(hideBin(process.argv))
   .command(ExportCommand)
   .command(ImportCommand)
   .command(GithubCommand)
+  .command(GiteaCommand)
   .command(PrCommand)
   .command(SessionCommand)
   .command(DbCommand)
