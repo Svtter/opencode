@@ -18,7 +18,7 @@ import type { ProviderID, ModelID } from "../../provider/schema"
 import { Bus } from "../../bus"
 import { MessageV2 } from "../../session/message-v2"
 import { SessionPrompt } from "@/session/prompt"
-import { Git } from "@/git"
+import { git } from "@/util/git"
 import { setTimeout as sleep } from "node:timers/promises"
 import { Process } from "@/util/process"
 import { GiteaForge } from "@/forge/gitea"
@@ -133,7 +133,7 @@ export const GiteaInstallCommand = cmd({
             throw new UI.CancelledError()
           }
 
-          const url = (await Git.run(["remote", "get-url", "origin"], { cwd: Instance.worktree })).text().trim()
+          const url = (await git(["remote", "get-url", "origin"], { cwd: Instance.worktree })).text().trim()
           const parsed = parseRemote(url)
           if (!parsed || parsed.platform !== "gitea") {
             prompts.log.error("Could not find a Gitea git remote. Please run this command from a Gitea repository.")
@@ -929,7 +929,7 @@ function generateBranchName(type: "issue" | "pr" | "schedule" | "dispatch", issu
 }
 
 async function gitText(args: string[]) {
-  const result = await Git.run(args, { cwd: Instance.worktree })
+  const result = await git(args, { cwd: Instance.worktree })
   if (result.exitCode !== 0) {
     throw new Process.RunFailedError(["git", ...args], result.exitCode, result.stdout, result.stderr)
   }
@@ -937,7 +937,7 @@ async function gitText(args: string[]) {
 }
 
 async function gitRun(args: string[]) {
-  const result = await Git.run(args, { cwd: Instance.worktree })
+  const result = await git(args, { cwd: Instance.worktree })
   if (result.exitCode !== 0) {
     throw new Process.RunFailedError(["git", ...args], result.exitCode, result.stdout, result.stderr)
   }
@@ -945,7 +945,7 @@ async function gitRun(args: string[]) {
 }
 
 function gitStatus(args: string[]) {
-  return Git.run(args, { cwd: Instance.worktree })
+  return git(args, { cwd: Instance.worktree })
 }
 
 async function commitChanges(summary: string, actor: string | undefined, host: string) {

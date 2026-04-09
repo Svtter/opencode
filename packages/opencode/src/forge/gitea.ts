@@ -262,31 +262,31 @@ export class GiteaForge implements ForgeProvider {
   }
 
   async configureGit(token: string, host: string): Promise<string | undefined> {
-    const { Git } = await import("@/git")
+    const { git } = await import("@/util/git")
     const cwd = process.cwd()
     const key = `http.https://${host}/.extraheader`
+    const ret = await git(["config", "--local", "--get", key], { cwd })
     let saved: string | undefined
-    const ret = await Git.run(["config", "--local", "--get", key], { cwd })
     if (ret.exitCode === 0) {
-      saved = ret.stdout.toString().trim()
-      await Git.run(["config", "--local", "--unset-all", key], { cwd })
+      saved = ret.text().trim()
+      await git(["config", "--local", "--unset-all", key], { cwd })
     }
     const value = Buffer.from(`x-access-token:${token}`, "utf8").toString("base64")
-    await Git.run(["config", "--local", key, `AUTHORIZATION: basic ${value}`], { cwd })
-    await Git.run(["config", "--global", "user.name", AGENT_USERNAME], { cwd })
-    await Git.run(["config", "--global", "user.email", `${AGENT_USERNAME}@${host}`], { cwd })
+    await git(["config", "--local", key, `AUTHORIZATION: basic ${value}`], { cwd })
+    await git(["config", "--global", "user.name", AGENT_USERNAME], { cwd })
+    await git(["config", "--global", "user.email", `${AGENT_USERNAME}@${host}`], { cwd })
     return saved
   }
 
   async restoreGitConfig(savedConfig: string | undefined, host: string) {
-    const { Git } = await import("@/git")
+    const { git } = await import("@/util/git")
     const cwd = process.cwd()
     const key = `http.https://${host}/.extraheader`
     if (!savedConfig) {
-      await Git.run(["config", "--local", "--unset-all", key], { cwd })
+      await git(["config", "--local", "--unset-all", key], { cwd })
       return
     }
-    await Git.run(["config", "--local", key, savedConfig], { cwd })
+    await git(["config", "--local", key, savedConfig], { cwd })
   }
 
   async revokeToken() {}
