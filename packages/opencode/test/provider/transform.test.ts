@@ -2913,3 +2913,112 @@ describe("ProviderTransform.options - reasoning include for OpenAI (issue #24190
     expect(defaultOptions.include).toBeUndefined()
   })
 })
+
+describe("BUG PROOF: ProviderTransform.options - encrypted_content for reasoning round-trip", () => {
+  const sessionID = "test-session-123"
+
+  test("BUG: options() should include reasoning.encrypted_content for openai reasoning models (not just variants)", () => {
+    const openaiReasoningModel = {
+      id: "openai/o3",
+      providerID: "openai",
+      api: {
+        id: "o3",
+        url: "https://api.openai.com",
+        npm: "@ai-sdk/openai",
+      },
+      name: "O3",
+      capabilities: {
+        temperature: false,
+        reasoning: true,
+        attachment: false,
+        toolcall: true,
+        input: { text: true, audio: false, image: true, video: false, pdf: false },
+        output: { text: true, audio: false, image: false, video: false, pdf: false },
+        interleaved: false,
+      },
+      cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+      limit: { context: 200000, output: 100000 },
+      status: "active",
+      options: {},
+      headers: {},
+      release_date: "2025-12-04",
+    } as any
+
+    const result = ProviderTransform.options({
+      model: openaiReasoningModel,
+      sessionID,
+    })
+
+    expect(result.include).toEqual(["reasoning.encrypted_content"])
+  })
+
+  test("BUG: options() should include reasoning.encrypted_content for copilot reasoning models", () => {
+    const copilotReasoningModel = {
+      id: "github-copilot/gpt-4.1",
+      providerID: "github-copilot",
+      api: {
+        id: "gpt-4.1",
+        url: "https://api.githubcopilot.com",
+        npm: "@ai-sdk/github-copilot",
+      },
+      name: "GPT-4.1",
+      capabilities: {
+        temperature: true,
+        reasoning: true,
+        attachment: true,
+        toolcall: true,
+        input: { text: true, audio: false, image: true, video: false, pdf: false },
+        output: { text: true, audio: false, image: false, video: false, pdf: false },
+        interleaved: false,
+      },
+      cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+      limit: { context: 128000, output: 16384 },
+      status: "active",
+      options: {},
+      headers: {},
+      release_date: "2025-12-04",
+    } as any
+
+    const result = ProviderTransform.options({
+      model: copilotReasoningModel,
+      sessionID,
+    })
+
+    expect(result.include).toEqual(["reasoning.encrypted_content"])
+  })
+
+  test("BUG: options() should include reasoning.encrypted_content for azure reasoning models", () => {
+    const azureReasoningModel = {
+      id: "azure/o3",
+      providerID: "azure",
+      api: {
+        id: "o3",
+        url: "https://test.openai.azure.com",
+        npm: "@ai-sdk/azure",
+      },
+      name: "O3",
+      capabilities: {
+        temperature: false,
+        reasoning: true,
+        attachment: false,
+        toolcall: true,
+        input: { text: true, audio: false, image: true, video: false, pdf: false },
+        output: { text: true, audio: false, image: false, video: false, pdf: false },
+        interleaved: false,
+      },
+      cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+      limit: { context: 200000, output: 100000 },
+      status: "active",
+      options: {},
+      headers: {},
+      release_date: "2025-12-04",
+    } as any
+
+    const result = ProviderTransform.options({
+      model: azureReasoningModel,
+      sessionID,
+    })
+
+    expect(result.include).toEqual(["reasoning.encrypted_content"])
+  })
+})

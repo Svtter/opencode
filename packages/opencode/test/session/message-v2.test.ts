@@ -1036,4 +1036,46 @@ describe("MessageV2.toModelMessages - reasoning providerMetadata round-trip (iss
 
     expect(reasoningPart.providerOptions).toBeUndefined()
   })
+
+  test("BUG FIX: should preserve reasoningEncryptedContent even when model changes for multi-turn round-trip", async () => {
+    const otherModel: Provider.Model = {
+      ...reasoningModel,
+      id: ModelID.make("openai/o4-mini"),
+      providerID: ProviderID.make("openai"),
+      api: { ...reasoningModel.api, id: "o4-mini" },
+    }
+
+    const input: MessageV2.WithParts[] = [
+      {
+        info: assistantInfo("m-1", "m-parent"),
+        parts: [
+          {
+            ...basePart("m-1", "p-1"),
+            type: "reasoning",
+            text: "thinking...",
+            time: { start: 0 },
+            metadata: {
+              openai: {
+                itemId: "rs_abc123",
+                reasoningEncryptedContent: "encrypted_reasoning_data",
+              },
+            },
+          },
+          {
+            ...basePart("m-1", "p-2"),
+            type: "text",
+            text: "Hello!",
+          },
+        ] as MessageV2.Part[],
+      },
+    ]
+
+    const result = await MessageV2.toModelMessages(input, otherModel)
+    const assistantMsg = result.find((m) => m.role === "assistant") as any
+    const reasoningPart = assistantMsg.content.find((p: any) => p.type === "reasoning")
+
+    expect(reasoningPart.providerOptions).toBeDefined()
+    expect(reasoningPart.providerOptions.openai.reasoningEncryptedContent).toBe("encrypted_reasoning_data")
+    expect(reasoningPart.providerOptions.openai.itemId).toBe("rs_abc123")
+  })
 })
