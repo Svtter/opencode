@@ -2837,3 +2837,79 @@ describe("ProviderTransform.variants", () => {
     })
   })
 })
+
+describe("ProviderTransform.options - reasoning include for OpenAI (issue #24190)", () => {
+  test("BUG: options() does not set include for reasoning.encrypted_content by default", () => {
+    const openaiReasoningModel = {
+      id: "openai/o3",
+      providerID: "openai",
+      api: {
+        id: "o3",
+        url: "https://api.openai.com",
+        npm: "@ai-sdk/openai",
+      },
+      name: "O3",
+      capabilities: {
+        temperature: false,
+        reasoning: true,
+        attachment: false,
+        toolcall: true,
+        input: { text: true, audio: false, image: true, video: false, pdf: false },
+        output: { text: true, audio: false, image: false, video: false, pdf: false },
+        interleaved: false,
+      },
+      cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+      limit: { context: 200000, output: 100000 },
+      status: "active",
+      options: {},
+      headers: {},
+      release_date: "2025-12-04",
+    } as any
+
+    const result = ProviderTransform.options({
+      model: openaiReasoningModel,
+      sessionID: "test-session",
+    })
+
+    expect(result.store).toBe(false)
+    expect(result.include).toBeUndefined()
+  })
+
+  test("variants() sets include but options() does not merge it", () => {
+    const openaiReasoningModel = {
+      id: "openai/o3",
+      providerID: "openai",
+      api: {
+        id: "o3",
+        url: "https://api.openai.com",
+        npm: "@ai-sdk/openai",
+      },
+      name: "O3",
+      capabilities: {
+        temperature: false,
+        reasoning: true,
+        attachment: false,
+        toolcall: true,
+        input: { text: true, audio: false, image: true, video: false, pdf: false },
+        output: { text: true, audio: false, image: false, video: false, pdf: false },
+        interleaved: false,
+      },
+      cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+      limit: { context: 200000, output: 100000 },
+      status: "active",
+      options: {},
+      headers: {},
+      release_date: "2025-12-04",
+    } as any
+
+    const variantOptions = ProviderTransform.variants(openaiReasoningModel)
+    expect(variantOptions.high.include).toEqual(["reasoning.encrypted_content"])
+    expect(variantOptions.low.include).toEqual(["reasoning.encrypted_content"])
+
+    const defaultOptions = ProviderTransform.options({
+      model: openaiReasoningModel,
+      sessionID: "test-session",
+    })
+    expect(defaultOptions.include).toBeUndefined()
+  })
+})

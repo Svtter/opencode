@@ -955,3 +955,85 @@ describe("session.message-v2.fromError", () => {
     expect(result.name).toBe("MessageAbortedError")
   })
 })
+
+describe("MessageV2.toModelMessages - reasoning providerMetadata round-trip (issue #24190)", () => {
+  const reasoningModel: Provider.Model = {
+    ...model,
+    capabilities: { ...model.capabilities, reasoning: true },
+  }
+
+  test("preserves providerMetadata on reasoning parts when model is the same", async () => {
+    const input: MessageV2.WithParts[] = [
+      {
+        info: assistantInfo("m-1", "m-parent"),
+        parts: [
+          {
+            ...basePart("m-1", "p-1"),
+            type: "reasoning",
+            text: "thinking...",
+            time: { start: 0 },
+            metadata: {
+              openai: {
+                itemId: "rs_abc123",
+                reasoningEncryptedContent: "encrypted_reasoning_data",
+              },
+            },
+          },
+          {
+            ...basePart("m-1", "p-2"),
+            type: "text",
+            text: "Hello!",
+          },
+        ] as MessageV2.Part[],
+      },
+    ]
+
+    const result = await MessageV2.toModelMessages(input, reasoningModel)
+    const assistantMsg = result.find((m) => m.role === "assistant") as any
+    const reasoningPart = assistantMsg.content.find((p: any) => p.type === "reasoning")
+
+    expect(reasoningPart.providerOptions).toBeDefined()
+    expect(reasoningPart.providerOptions.openai.itemId).toBe("rs_abc123")
+    expect(reasoningPart.providerOptions.openai.reasoningEncryptedContent).toBe("encrypted_reasoning_data")
+  })
+
+  test("BUG: strips providerMetadata on reasoning parts when model changes (differentModel=true)", async () => {
+    const otherModel: Provider.Model = {
+      ...reasoningModel,
+      id: ModelID.make("openai/o4-mini"),
+      providerID: ProviderID.make("openai"),
+      api: { ...reasoningModel.api, id: "o4-mini" },
+    }
+
+    const input: MessageV2.WithParts[] = [
+      {
+        info: assistantInfo("m-1", "m-parent"),
+        parts: [
+          {
+            ...basePart("m-1", "p-1"),
+            type: "reasoning",
+            text: "thinking...",
+            time: { start: 0 },
+            metadata: {
+              openai: {
+                itemId: "rs_abc123",
+                reasoningEncryptedContent: "encrypted_reasoning_data",
+              },
+            },
+          },
+          {
+            ...basePart("m-1", "p-2"),
+            type: "text",
+            text: "Hello!",
+          },
+        ] as MessageV2.Part[],
+      },
+    ]
+
+    const result = await MessageV2.toModelMessages(input, otherModel)
+    const assistantMsg = result.find((m) => m.role === "assistant") as any
+    const reasoningPart = assistantMsg.content.find((p: any) => p.type === "reasoning")
+
+    expect(reasoningPart.providerOptions).toBeUndefined()
+  })
+})
